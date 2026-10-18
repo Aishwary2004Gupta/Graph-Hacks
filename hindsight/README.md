@@ -1,5 +1,8 @@
 # Hindsight — Graph-Native Autonomous On-Call Copilot & SRE Swarm
+
+## 🎥 Demo Video 
 <img width="800" height="450" alt="Hindsight-demo-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/dc46b4c9-eae6-41de-a0b5-82e722de07ff" />
+
 
 > **WeMakeDevs & FalkorDB Hackathon Submission**  
 > **Tracks Entered:**  
@@ -23,11 +26,6 @@ Traditional RAG and vector databases hallucinate, fail at multi-hop graph traver
 > **Rule 3 Compliance:** Remove FalkorDB and the product does nothing. Every single copilot action, root-cause calculation, and multi-agent coordination step is executed as a Cypher query or native FalkorDB graph algorithm (`algo.pageRank`, `shortestPath`, variable-length traversals).
 
 ---
-
-## 🎥 Demo Video 
-
-
-
 
 ## 🚀 Quickstart (1 Minute Local Setup)
 
