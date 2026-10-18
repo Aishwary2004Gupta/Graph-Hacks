@@ -1,4 +1,5 @@
 # Hindsight — Graph-Native Autonomous On-Call Copilot & SRE Swarm
+<img width="800" height="450" alt="Hindsight-demo-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/dc46b4c9-eae6-41de-a0b5-82e722de07ff" />
 
 > **WeMakeDevs & FalkorDB Hackathon Submission**  
 > **Tracks Entered:**  
