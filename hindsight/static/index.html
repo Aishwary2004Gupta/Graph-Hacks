@@ -6,57 +6,71 @@
   <title>Hindsight — Autonomous Graph-Native On-Call Copilot (FalkorDB)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
   <style>
     :root {
-      --bg: #090d16;
-      --bg-surface: #0f172a;
-      --card-bg: rgba(18, 26, 43, 0.75);
-      --card-border: rgba(56, 75, 112, 0.35);
-      --card-border-hover: rgba(139, 92, 246, 0.45);
-      --fg: #f1f5f9;
-      --fg-muted: #94a3b8;
-      --fg-dim: #64748b;
-      --accent: #8b5cf6;
-      --accent-glow: rgba(139, 92, 246, 0.25);
-      --brand-orange: #ff7a45;
-      --brand-cyan: #06b6d4;
-      --brand-green: #10b981;
-      --brand-red: #ef4444;
-      --brand-amber: #f59e0b;
-      --radius: 10px;
+      --bg: #000000;
+      --bg-surface: #09090b;
+      --bg-elevated: #111113;
+      --bg-hover: #18181b;
+      --card-border: #222226;
+      --card-border-hover: #3f3f46;
+      --card-border-active: #ffffff;
+      --fg: #ffffff;
+      --fg-secondary: #d4d4d8;
+      --fg-muted: #888891;
+      --fg-dim: #52525b;
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       background: var(--bg);
-      background-image: 
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.15), transparent),
-        radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.05), transparent 40%);
       color: var(--fg);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      font-size: 13.5px;
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
       line-height: 1.5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Top Navigation Header */
+    /* Subtle background grid pattern */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header, .scenario-nav, main, footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Top Navigation Header (Black & White Minimalist) */
     header {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--card-border);
-      padding: 10px 20px;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
       position: sticky;
       top: 0;
-      z-index: 50;
     }
 
     .brand-section {
@@ -64,434 +78,437 @@
       align-items: center;
       gap: 12px;
     }
-    .brand-logo {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, #7c3aed, #ff7a45);
-      border-radius: 8px;
+
+    .brand-symbol {
+      width: 26px;
+      height: 26px;
+      background: #ffffff;
+      color: #000000;
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+      font-weight: 800;
+      font-size: 14px;
+      font-family: 'Geist Mono', monospace;
+      letter-spacing: -0.05em;
     }
-    .brand-logo svg {
-      width: 18px;
-      height: 18px;
-      stroke: #fff;
-    }
-    .brand-text h1 {
-      font-size: 16px;
+
+    .brand-title {
+      font-size: 14px;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .brand-text h1 span {
-      background: linear-gradient(90deg, #a78bfa, #ff7a45);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .badge-falkor {
-      font-size: 10.5px;
+
+    .badge-mono {
+      font-size: 10px;
       font-weight: 600;
-      background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      color: #c4b5fd;
-      padding: 2px 7px;
-      border-radius: 20px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      background: #18181b;
+      border: 1px solid #27272a;
+      color: #a1a1aa;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-family: 'Geist Mono', monospace;
+      letter-spacing: 0.04em;
     }
+
     .brand-sub {
       font-size: 11px;
       color: var(--fg-muted);
+      margin-left: 2px;
     }
 
-    .telemetry-bar {
+    .telemetry-row {
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
-    .status-pill {
+
+    .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--fg-muted);
-      background: rgba(30, 41, 59, 0.6);
+      font-family: 'Geist Mono', monospace;
+      color: var(--fg-secondary);
+      background: var(--bg-surface);
       border: 1px solid var(--card-border);
-      padding: 4px 10px;
-      border-radius: 6px;
-    }
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--brand-green);
-      box-shadow: 0 0 8px var(--brand-green);
-    }
-    .status-dot.pulse {
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0% { opacity: 0.6; transform: scale(0.95); }
-      50% { opacity: 1; transform: scale(1.15); }
-      100% { opacity: 0.6; transform: scale(0.95); }
+      padding: 4px 9px;
+      border-radius: var(--radius-sm);
     }
 
-    .control-group {
+    .status-dot-white {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+    }
+
+    .control-wrap {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .select-wrap {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11.5px;
-      color: var(--fg-muted);
+
+    .label-inline {
+      font-size: 11px;
+      color: var(--fg-dim);
+      text-transform: uppercase;
+      font-family: 'Geist Mono', monospace;
+      letter-spacing: 0.05em;
     }
-    select, button, input {
+
+    select, input {
       font-family: inherit;
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--fg);
-      background: rgba(30, 41, 59, 0.7);
+      background: var(--bg-surface);
       border: 1px solid var(--card-border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       padding: 5px 9px;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
     }
+
     select:focus, input:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-glow);
+      border-color: #ffffff;
     }
+
+    /* Buttons (Black & White Palette) */
     button {
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
       cursor: pointer;
       font-weight: 500;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-    }
-    button:hover {
-      background: rgba(51, 65, 85, 0.9);
-      border-color: rgba(148, 163, 184, 0.4);
-    }
-    button.btn-primary {
-      background: linear-gradient(135deg, #7c3aed, #6d28d9);
-      border: 1px solid rgba(167, 139, 250, 0.4);
-      color: #fff;
-      font-weight: 600;
-      box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3);
-    }
-    button.btn-primary:hover {
-      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
-    }
-    button.btn-amber {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.25));
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      color: #fbbf24;
-    }
-    button.btn-amber:hover {
-      background: rgba(245, 158, 11, 0.3);
+      transition: all 0.15s ease;
     }
 
-    /* Subheader Scenarios Bar */
-    .scenario-banner {
-      background: rgba(15, 23, 42, 0.6);
+    button.btn-solid-white {
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #ffffff;
+      font-weight: 600;
+    }
+    button.btn-solid-white:hover {
+      background: #e4e4e7;
+      border-color: #e4e4e7;
+    }
+
+    button.btn-outline-dark {
+      background: var(--bg-surface);
+      color: var(--fg-secondary);
+      border: 1px solid var(--card-border);
+    }
+    button.btn-outline-dark:hover {
+      background: var(--bg-hover);
+      border-color: var(--card-border-hover);
+      color: #ffffff;
+    }
+
+    /* Quick Scenarios Strip */
+    .scenario-nav {
+      background: #000000;
       border-bottom: 1px solid var(--card-border);
-      padding: 8px 20px;
+      padding: 8px 24px;
       display: flex;
       align-items: center;
       gap: 12px;
       overflow-x: auto;
       white-space: nowrap;
     }
-    .scenario-label {
+
+    .scenario-title {
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--brand-orange);
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      letter-spacing: 0.06em;
+      color: var(--fg-dim);
+      font-family: 'Geist Mono', monospace;
       flex-shrink: 0;
     }
-    .scenario-chips {
+
+    .scenario-pills {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
-    .chip {
-      background: rgba(30, 41, 59, 0.5);
+
+    .pill-scenario {
+      background: var(--bg-surface);
       border: 1px solid var(--card-border);
       color: var(--fg-muted);
       padding: 3px 10px;
-      border-radius: 20px;
+      border-radius: 999px;
       font-size: 11.5px;
       cursor: pointer;
       transition: all 0.15s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
     }
-    .chip:hover {
-      background: rgba(139, 92, 246, 0.15);
-      border-color: rgba(139, 92, 246, 0.4);
-      color: #e2e8f0;
-      transform: translateY(-1px);
+    .pill-scenario:hover {
+      background: var(--bg-hover);
+      border-color: var(--card-border-hover);
+      color: #ffffff;
     }
 
-    /* Main Grid Layout */
+    /* Main Grid Workspace */
     main {
       flex: 1;
       display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 16px;
-      padding: 16px 20px;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+      padding: 18px 24px;
       max-width: 1720px;
       margin: 0 auto;
       width: 100%;
     }
-    @media (max-width: 1180px) {
+
+    @media (max-width: 1100px) {
       main { grid-template-columns: 1fr; }
     }
 
-    .column {
+    .panel {
       display: flex;
       flex-direction: column;
       gap: 16px;
       min-width: 0;
     }
 
-    .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+    .bento-card {
+      background: var(--bg-surface);
       border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.2s;
     }
-    .card:hover {
-      border-color: rgba(56, 75, 112, 0.6);
+    .bento-card:hover {
+      border-color: var(--card-border-hover);
     }
 
-    .card-header {
+    .bento-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid rgba(56, 75, 112, 0.25);
-      padding-bottom: 8px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
     }
-    .card-title {
-      font-size: 13.5px;
+
+    .bento-title {
+      font-size: 13px;
       font-weight: 600;
-      color: var(--fg);
+      letter-spacing: 0.02em;
+      color: #ffffff;
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-    .card-title svg {
-      width: 16px;
-      height: 16px;
-      color: var(--accent);
+      text-transform: uppercase;
+      font-family: 'Geist Mono', monospace;
     }
 
-    /* Copilot Query Input Box */
-    .query-box {
+    /* Command Input Box */
+    .command-box {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
-    .input-wrapper {
+
+    .input-row {
       position: relative;
       display: flex;
       align-items: center;
     }
-    .input-wrapper svg {
+
+    .input-row svg {
       position: absolute;
-      left: 12px;
-      width: 16px;
-      height: 16px;
+      left: 14px;
+      width: 15px;
+      height: 15px;
       color: var(--fg-dim);
       pointer-events: none;
     }
+
     #q {
       width: 100%;
-      padding: 10px 14px 10px 38px;
-      font-size: 13.5px;
-      border-radius: 8px;
-      background: rgba(15, 23, 42, 0.85);
+      padding: 11px 16px 11px 40px;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      background: #000000;
       border: 1px solid var(--card-border);
-      color: #fff;
+      color: #ffffff;
+      font-family: inherit;
+      transition: border-color 0.15s ease;
+    }
+    #q:focus {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 1px #ffffff;
     }
     #q::placeholder {
       color: var(--fg-dim);
     }
-    .action-row {
+
+    .action-group {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
     }
 
-    /* Copilot Output Styles */
-    .answer-container {
-      background: rgba(10, 15, 29, 0.9);
+    /* Copilot Output Console */
+    .output-viewport {
+      background: #000000;
       border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 14px 16px;
-      min-height: 120px;
-      max-height: 480px;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      min-height: 140px;
+      max-height: 520px;
       overflow-y: auto;
       font-size: 13px;
       line-height: 1.6;
     }
-    .mode-tag {
+
+    .engine-pill {
       display: inline-flex;
       align-items: center;
       gap: 5px;
       font-size: 10.5px;
       font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.35);
-      color: #c4b5fd;
-      margin-bottom: 10px;
-    }
-    .mode-tag.swarm {
-      background: rgba(245, 158, 11, 0.15);
-      border-color: rgba(245, 158, 11, 0.35);
-      color: #fcd34d;
+      font-family: 'Geist Mono', monospace;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      color: #ffffff;
+      margin-bottom: 12px;
+      text-transform: uppercase;
     }
 
-    /* Rich Report Rendering inside Answer */
-    .answer-container h3 {
-      font-size: 15px;
+    /* Typography inside Answer Console */
+    .output-viewport h3 {
+      font-size: 14.5px;
       font-weight: 700;
-      color: #fff;
-      margin-top: 4px;
+      color: #ffffff;
       margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      border-bottom: 1px solid #1f1f23;
+      padding-bottom: 6px;
+      font-family: 'Geist Mono', monospace;
     }
-    .answer-container h4 {
-      font-size: 13.5px;
+    .output-viewport h4 {
+      font-size: 13px;
       font-weight: 600;
-      color: #cbd5e1;
+      color: #e4e4e7;
       margin-top: 14px;
       margin-bottom: 6px;
+      text-transform: uppercase;
+      font-family: 'Geist Mono', monospace;
+      letter-spacing: 0.03em;
     }
-    .answer-container blockquote {
-      border-left: 3px solid var(--accent);
-      background: rgba(139, 92, 246, 0.08);
+    .output-viewport blockquote {
+      border-left: 2px solid #ffffff;
+      background: #0e0e11;
       padding: 8px 12px;
-      border-radius: 0 6px 6px 0;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       margin: 8px 0;
-      color: #e2e8f0;
+      color: #d4d4d8;
     }
-    .answer-container table {
+    .output-viewport table {
       width: 100%;
       border-collapse: collapse;
-      margin: 10px 0;
-      font-size: 12.5px;
+      margin: 12px 0;
+      font-size: 12px;
+      font-family: 'Geist Mono', monospace;
     }
-    .answer-container th {
-      background: rgba(30, 41, 59, 0.7);
+    .output-viewport th {
+      background: #18181b;
       padding: 6px 10px;
       text-align: left;
       border: 1px solid var(--card-border);
-      color: #94a3b8;
+      color: #a1a1aa;
       font-weight: 600;
     }
-    .answer-container td {
+    .output-viewport td {
       padding: 6px 10px;
-      border: 1px solid rgba(56, 75, 112, 0.25);
+      border: 1px solid #1a1a1e;
+      color: #e4e4e7;
     }
-    .answer-container ul {
+    .output-viewport ul {
       margin-left: 20px;
       margin-bottom: 8px;
     }
-    .answer-container li {
+    .output-viewport li {
       margin-bottom: 4px;
+      color: #d4d4d8;
     }
-    .answer-container code {
+    .output-viewport code {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11.5px;
-      background: rgba(30, 41, 59, 0.8);
-      padding: 2px 5px;
-      border-radius: 4px;
-      color: #fcd34d;
+      background: #18181b;
+      border: 1px solid #27272a;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #ffffff;
     }
-    .answer-container hr {
+    .output-viewport hr {
       border: 0;
       border-top: 1px solid var(--card-border);
       margin: 14px 0;
     }
 
-    /* Multi-Agent Incident Stages */
+    /* Multi-Agent Swarm Pipeline */
     .agent-pipeline {
       display: flex;
       flex-direction: column;
       gap: 10px;
       margin-top: 8px;
     }
-    .agent-stage-card {
-      background: rgba(15, 23, 42, 0.75);
+    .stage-card {
+      background: #09090b;
       border: 1px solid var(--card-border);
-      border-left: 3px solid var(--accent);
-      border-radius: 6px;
-      padding: 10px 12px;
+      border-left: 3px solid #ffffff;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
     }
-    .agent-stage-card.triage { border-left-color: var(--brand-orange); }
-    .agent-stage-card.investigator { border-left-color: var(--brand-cyan); }
-    .agent-stage-card.scribe { border-left-color: var(--brand-green); }
-
-    .agent-stage-header {
+    .stage-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 6px;
       font-size: 11.5px;
+      font-family: 'Geist Mono', monospace;
     }
-    .agent-name-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+    .stage-agent-name {
       font-weight: 600;
+      color: #ffffff;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    .handoff-arrow {
-      color: var(--fg-dim);
-    }
 
-    /* Cypher Graph Trace Accordion */
-    .trace-container {
+    /* Cypher Execution Trace */
+    .trace-list {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 300px;
+      max-height: 260px;
       overflow-y: auto;
     }
     details.trace-item {
-      background: rgba(15, 23, 42, 0.6);
+      background: #000000;
       border: 1px solid var(--card-border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      transition: all 0.2s;
     }
     details.trace-item[open] {
-      border-color: rgba(139, 92, 246, 0.4);
+      border-color: #3f3f46;
     }
     summary.trace-summary {
       padding: 8px 12px;
@@ -499,168 +516,176 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 12px;
-      font-weight: 500;
+      font-size: 11.5px;
       user-select: none;
+      font-family: 'Geist Mono', monospace;
     }
     summary.trace-summary:hover {
-      background: rgba(30, 41, 59, 0.4);
+      background: #111114;
     }
-    .tool-name {
-      color: var(--accent);
-      font-family: 'JetBrains Mono', monospace;
+    .tool-ident {
+      color: #ffffff;
       font-weight: 600;
     }
-    .tool-meta {
-      font-size: 11px;
+    .tool-count {
       color: var(--fg-dim);
-      font-family: 'JetBrains Mono', monospace;
     }
-    .trace-content {
+    .trace-body {
       padding: 10px 12px;
-      background: rgba(10, 15, 29, 0.9);
-      border-top: 1px solid rgba(56, 75, 112, 0.25);
+      background: #050505;
+      border-top: 1px solid #1a1a1e;
     }
-    .cypher-box {
+    .cypher-code {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      background: #060911;
+      background: #0d0d10;
       padding: 8px 10px;
       border-radius: 4px;
-      border: 1px solid rgba(56, 75, 112, 0.3);
-      color: #38bdf8;
+      border: 1px solid #222226;
+      color: #e4e4e7;
       overflow-x: auto;
       margin-bottom: 8px;
     }
-    .rows-table-wrap {
-      max-height: 180px;
+    .table-scroll {
+      max-height: 160px;
       overflow: auto;
     }
-    .rows-table {
+    .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Geist Mono', monospace;
       font-size: 11px;
     }
-    .rows-table th {
-      background: rgba(30, 41, 59, 0.8);
+    .data-table th {
+      background: #18181b;
       padding: 4px 8px;
       border: 1px solid var(--card-border);
-      color: #94a3b8;
+      color: #a1a1aa;
       position: sticky;
       top: 0;
     }
-    .rows-table td {
+    .data-table td {
       padding: 4px 8px;
-      border: 1px solid rgba(56, 75, 112, 0.2);
-      color: #cbd5e1;
+      border: 1px solid #1f1f23;
+      color: #d4d4d8;
     }
 
-    /* Right Column Tabs */
-    .tabs-header {
+    /* Right Panel Tabs */
+    .tab-bar {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       border-bottom: 1px solid var(--card-border);
       padding-bottom: 6px;
     }
-    .tab-btn {
+    .tab-item {
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       color: var(--fg-muted);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-family: 'Geist Mono', monospace;
       font-weight: 500;
       cursor: pointer;
     }
-    .tab-btn.active {
-      background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.35);
-      color: #c4b5fd;
+    .tab-item:hover {
+      color: #ffffff;
+    }
+    .tab-item.active {
+      background: #18181b;
+      border-color: #27272a;
+      color: #ffffff;
       font-weight: 600;
     }
-    .tab-pane {
+
+    .tab-view {
       display: none;
       flex-direction: column;
       gap: 12px;
     }
-    .tab-pane.active {
+    .tab-view.active {
       display: flex;
     }
 
-    /* Vis.js Graph Canvas */
-    .graph-viewport {
+    /* Graph Canvas Viewport */
+    .graph-box {
       position: relative;
-      height: 480px;
-      background: #080c14;
+      height: 520px;
+      background: #000000;
       border: 1px solid var(--card-border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
     #net {
       width: 100%;
       height: 100%;
     }
-    .graph-toolbar {
+    .graph-actions {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 8px;
+      right: 8px;
       display: flex;
       gap: 4px;
       z-index: 10;
-      background: rgba(15, 23, 42, 0.8);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(8px);
-      padding: 4px;
-      border-radius: 6px;
+      padding: 3px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--card-border);
     }
-    .graph-tool-btn {
-      padding: 4px 8px;
+    .graph-btn {
+      padding: 3px 8px;
       font-size: 11px;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid rgba(56, 75, 112, 0.4);
-      color: #cbd5e1;
-      border-radius: 4px;
+      font-family: 'Geist Mono', monospace;
+      background: #18181b;
+      border: 1px solid #27272a;
+      color: #d4d4d8;
+      border-radius: var(--radius-sm);
+    }
+    .graph-btn:hover {
+      background: #27272a;
+      color: #ffffff;
     }
 
-    /* Graph Legend */
-    .graph-legend {
+    /* Monochrome Graph Legend */
+    .graph-legend-strip {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       padding: 8px 10px;
-      background: rgba(15, 23, 42, 0.5);
+      background: #050505;
       border: 1px solid var(--card-border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       font-size: 11px;
+      font-family: 'Geist Mono', monospace;
     }
-    .legend-item {
+    .legend-chip {
       display: inline-flex;
       align-items: center;
       gap: 5px;
+      padding: 2px 6px;
+      background: #111114;
+      border: 1px solid #27272a;
+      border-radius: var(--radius-sm);
+      color: #d4d4d8;
     }
-    .legend-color {
-      width: 8px;
-      height: 8px;
+    .legend-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
     }
 
-    /* Selected Node Inspector Drawer */
+    /* Node Inspector Drawer */
     #node-inspector {
       display: none;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      border-radius: 8px;
+      background: #09090b;
+      border: 1px solid #3f3f46;
+      border-radius: var(--radius-sm);
       padding: 12px;
       font-size: 12px;
-      animation: fadeIn 0.2s ease;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .inspector-header {
+    .inspector-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -668,11 +693,12 @@
       padding-bottom: 6px;
       margin-bottom: 8px;
     }
-    .inspector-title {
+    .inspector-label {
       font-weight: 600;
-      color: #fff;
+      color: #ffffff;
+      font-family: 'Geist Mono', monospace;
     }
-    .inspector-props {
+    .inspector-grid {
       display: grid;
       grid-template-columns: auto 1fr;
       gap: 4px 10px;
@@ -680,79 +706,71 @@
       font-size: 11px;
     }
 
-    /* Memory Tab */
-    .mem-grid {
-      display: grid;
-      grid-template-columns: 1fr;
+    /* Memory Tab Content */
+    .memory-stack {
+      display: flex;
+      flex-direction: column;
       gap: 12px;
     }
-    .mem-card {
-      background: rgba(15, 23, 42, 0.6);
+    .memory-card {
+      background: #000000;
       border: 1px solid var(--card-border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 12px;
     }
-    .mem-card h4 {
-      font-size: 12px;
+    .memory-card-title {
+      font-size: 11.5px;
       font-weight: 600;
       text-transform: uppercase;
+      font-family: 'Geist Mono', monospace;
       letter-spacing: 0.05em;
       color: var(--fg-muted);
       margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
-    .fact-item {
+    .fact-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 5px 8px;
-      background: rgba(30, 41, 59, 0.4);
-      border-radius: 4px;
+      background: #0d0d10;
+      border: 1px solid #1a1a1e;
+      border-radius: var(--radius-sm);
       margin-bottom: 5px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
     }
-    .fact-pill {
+    .status-pill-mono {
       font-size: 9.5px;
-      padding: 2px 6px;
-      border-radius: 3px;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
       font-weight: 600;
+      text-transform: uppercase;
     }
-    .fact-pill.active {
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
+    .status-pill-mono.active {
+      background: #ffffff;
+      color: #000000;
     }
-    .fact-pill.superseded {
-      background: rgba(100, 116, 139, 0.2);
-      color: #94a3b8;
-      border: 1px solid rgba(100, 116, 139, 0.4);
-    }
-    .episode-item {
-      padding: 6px 8px;
-      border-bottom: 1px solid rgba(56, 75, 112, 0.2);
-      font-size: 11.5px;
-      color: #cbd5e1;
+    .status-pill-mono.superseded {
+      background: #18181b;
+      color: #71717a;
+      border: 1px solid #27272a;
     }
 
-    /* Toast Notification */
+    /* Toast */
     #toast {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid var(--accent);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 12.5px;
-      color: #fff;
+      bottom: 24px;
+      right: 24px;
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-family: 'Geist Mono', monospace;
       display: none;
       z-index: 100;
-      align-items: center;
-      gap: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
     }
   </style>
 </head>
@@ -761,213 +779,196 @@
   <!-- Top Navigation Header -->
   <header>
     <div class="brand-section">
-      <div class="brand-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <h1>HIND<span>SIGHT</span> <span class="badge-falkor">FalkorDB Native</span></h1>
-        <div class="brand-sub">Autonomous Graph-Native On-Call Copilot & Incident Commander</div>
+      <div class="brand-symbol">H</div>
+      <div>
+        <div class="brand-title">
+          <span>HINDSIGHT</span>
+          <span class="badge-mono">FALKORDB GRAPH COPILOT</span>
+        </div>
+        <div class="brand-sub">Autonomous Graph-Native Incident Commander & Memory Engine</div>
       </div>
     </div>
 
-    <div class="telemetry-bar">
-      <div class="status-pill">
-        <span class="status-dot pulse"></span>
+    <div class="telemetry-row">
+      <div class="status-badge">
+        <span class="status-dot-white"></span>
         <span>FalkorDB :6379</span>
       </div>
-      <div class="status-pill" id="graph-stat-pill">
+      <div class="status-badge">
         <span id="edge-count-badge">100 Graph Edges</span>
       </div>
 
-      <div class="control-group">
-        <div class="select-wrap">
-          <label for="tenant">Tenant</label>
-          <select id="tenant">
-            <option value="acme">Acme Corp</option>
-            <option value="globex">Globex Intl</option>
-          </select>
-        </div>
-        <div class="select-wrap">
-          <label for="user">Engineer</label>
-          <select id="user">
-            <option value="asha">Asha (Platform)</option>
-            <option value="ben">Ben (Platform)</option>
-          </select>
-        </div>
-        <button class="btn-amber" onclick="seed()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          Reseed Graph
-        </button>
-        <a href="http://localhost:3001" target="_blank" style="text-decoration: none;">
-          <button title="Open FalkorDB Visual Browser on port 3001">
-            Browser :3001 ↗
-          </button>
-        </a>
+      <div class="control-wrap">
+        <span class="label-inline">Tenant:</span>
+        <select id="tenant">
+          <option value="acme">acme (Acme Corp)</option>
+          <option value="globex">globex (Globex Intl)</option>
+        </select>
       </div>
+
+      <div class="control-wrap">
+        <span class="label-inline">On-Call:</span>
+        <select id="user">
+          <option value="asha">asha (Platform)</option>
+          <option value="ben">ben (Platform)</option>
+        </select>
+      </div>
+
+      <button class="btn-outline-dark" onclick="seed()">
+        ↺ Reseed Graph
+      </button>
+
+      <a href="http://localhost:3001" target="_blank" style="text-decoration:none;">
+        <button class="btn-outline-dark" title="Open FalkorDB Visual Browser on port 3001">
+          Browser :3001 ↗
+        </button>
+      </a>
     </div>
   </header>
 
-  <!-- Subheader Scenario Presets -->
-  <div class="scenario-banner">
-    <div class="scenario-label">
-      <span>⚡ Quick Scenarios:</span>
-    </div>
-    <div class="scenario-chips">
-      <div class="chip" onclick="go('What broke recently around postgres-main and who should I page?')">
-        🚨 <span>Postgres Outage Suspects</span>
+  <!-- Quick Scenarios Strip -->
+  <div class="scenario-nav">
+    <div class="scenario-title">⚡ QUICK SCENARIOS:</div>
+    <div class="scenario-pills">
+      <div class="pill-scenario" onclick="go('What broke recently around postgres-main and who should I page?')">
+        🚨 Postgres Outage Suspects
       </div>
-      <div class="chip" onclick="go('What breaks if redis-cache goes down?')">
-        💥 <span>Redis Blast Radius</span>
+      <div class="pill-scenario" onclick="go('What breaks if redis-cache goes down?')">
+        💥 Redis Blast Radius
       </div>
-      <div class="chip" onclick="go('What are the most critical services?')">
-        📊 <span>PageRank Vulnerability</span>
+      <div class="pill-scenario" onclick="go('What are the most critical services?')">
+        📊 Critical Services (PageRank)
       </div>
-      <div class="chip" onclick="go('Tell me about kafka-bus decisions')">
-        📜 <span>Kafka Architecture Decisions</span>
+      <div class="pill-scenario" onclick="go('Tell me about kafka-bus decisions')">
+        🏛️ Kafka Architecture Decisions
       </div>
-      <div class="chip" onclick="go('remember payments-svc oncall is Chen')">
-        🧠 <span>Teach Agent Memory</span>
+      <div class="pill-scenario" onclick="go('remember payments-svc oncall is Chen')">
+        🧠 Commit Memory
       </div>
     </div>
   </div>
 
   <!-- Main Grid Workspace -->
   <main>
-    <!-- Left Column: Copilot Console & Incident Commander -->
-    <div class="column">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            Incident Copilot & Multi-Agent Swarm
+    <!-- Left Column: Copilot Console & Incident Response -->
+    <div class="panel">
+      <div class="bento-card">
+        <div class="bento-header">
+          <div class="bento-title">
+            <span>// Incident Copilot Console</span>
           </div>
-          <span style="font-size: 11px; color: var(--fg-dim);">Multi-Hop Cypher Reasoning</span>
+          <span style="font-size: 11px; color: var(--fg-dim); font-family: 'Geist Mono', monospace;">Multi-Hop Cypher Engine</span>
         </div>
 
-        <div class="query-box">
-          <div class="input-wrapper">
+        <div class="command-box">
+          <div class="input-row">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-            <input id="q" placeholder="Ask Copilot: 'What broke recently around postgres-main and who should I page?'" onkeydown="if(event.key==='Enter')go()">
+            <input id="q" placeholder="Investigate: 'What broke recently around postgres-main and who should I page?'" onkeydown="if(event.key==='Enter')go()">
           </div>
-          <div class="action-row">
-            <button class="btn-primary" onclick="go()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              Investigate Query
+          <div class="action-group">
+            <button class="btn-solid-white" onclick="go()">
+              ⚡ Investigate Query
             </button>
-            <button class="btn-amber" onclick="inc()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-              Run Autonomous Swarm (Triage ➔ Investigator ➔ Scribe)
+            <button class="btn-outline-dark" onclick="inc()">
+              🤖 Run Autonomous Swarm (Triage ➔ Investigator ➔ Scribe)
             </button>
           </div>
         </div>
 
         <div>
           <div id="mode-tag-slot"></div>
-          <div id="ans" class="answer-container">
-            <div style="color: var(--fg-dim); text-align: center; padding: 30px 0;">
-              Enter an investigation query or click a quick scenario above.<br>
-              Every decision and root-cause hypothesis is verified across the FalkorDB knowledge graph.
+          <div id="ans" class="output-viewport">
+            <div style="color: var(--fg-dim); text-align: center; padding: 36px 0; font-family: 'Geist Mono', monospace;">
+              Enter an investigation query or click a scenario above.<br>
+              Zero-hallucination inference: all outputs are verified over FalkorDB graph traversals.
             </div>
           </div>
         </div>
 
         <div>
-          <div class="card-header" style="margin-bottom: 8px;">
-            <div class="card-title" style="font-size: 12.5px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              FalkorDB Cypher Audit Trail
+          <div class="bento-header" style="margin-bottom: 8px;">
+            <div class="bento-title" style="font-size: 12px;">
+              <span>// FalkorDB Cypher Audit Trail</span>
             </div>
-            <span id="trace-count-badge" style="font-size: 11px; color: var(--fg-dim);">0 queries executed</span>
+            <span id="trace-count-badge" style="font-size: 11px; color: var(--fg-dim); font-family: 'Geist Mono', monospace;">0 queries executed</span>
           </div>
-          <div id="trace" class="trace-container">
-            <div style="color: var(--fg-dim); font-size: 11.5px; padding: 8px;">No active Cypher query execution trace yet.</div>
+          <div id="trace" class="trace-list">
+            <div style="color: var(--fg-dim); font-size: 11px; padding: 6px; font-family: 'Geist Mono', monospace;">No Cypher execution logged.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: Interactive Multi-Graph Observatory -->
-    <div class="column">
-      <div class="card">
-        <div class="tabs-header">
-          <button class="tab-btn active" onclick="switchTab('graph')">🗺️ Knowledge Graph (FalkorDB)</button>
-          <button class="tab-btn" onclick="switchTab('memory')">🧠 Agent Memory Graph</button>
-          <button class="tab-btn" onclick="switchTab('handoffs')">🔄 Swarm Handoffs</button>
+    <!-- Right Column: Multi-Graph Observatory -->
+    <div class="panel">
+      <div class="bento-card">
+        <div class="tab-bar">
+          <button class="tab-item active" onclick="switchTab('graph')">Knowledge Graph (FalkorDB)</button>
+          <button class="tab-item" onclick="switchTab('memory')">Agent Memory Deck</button>
+          <button class="tab-item" onclick="switchTab('handoffs')">Swarm Handoffs</button>
         </div>
 
         <!-- Tab 1: Knowledge Graph -->
-        <div id="tab-graph" class="tab-pane active">
-          <div class="graph-legend">
-            <div class="legend-item"><span class="legend-color" style="background:#4da3ff"></span> Service</div>
-            <div class="legend-item"><span class="legend-color" style="background:#f2cc60"></span> Deploy</div>
-            <div class="legend-item"><span class="legend-color" style="background:#ff7b72"></span> Incident</div>
-            <div class="legend-item"><span class="legend-color" style="background:#7ee787"></span> Person</div>
-            <div class="legend-item"><span class="legend-color" style="background:#d2a8ff"></span> Team</div>
-            <div class="legend-item"><span class="legend-color" style="background:#79c0ff"></span> Decision</div>
-            <div class="legend-item"><span class="legend-color" style="background:#8b98a8"></span> Document</div>
-            <div class="legend-item"><span class="legend-color" style="background:#ffa657"></span> Runbook</div>
+        <div id="tab-graph" class="tab-view active">
+          <div class="graph-legend-strip">
+            <div class="legend-chip"><span class="legend-dot" style="background:#ffffff"></span> Service</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#e4e4e7"></span> Deploy</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#a1a1aa"></span> Incident</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#71717a"></span> Person</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#52525b"></span> Team</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#d4d4d8"></span> Decision</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#3f3f46"></span> Document</div>
+            <div class="legend-chip"><span class="legend-dot" style="background:#27272a"></span> Runbook</div>
           </div>
 
-          <div class="graph-viewport">
-            <div class="graph-toolbar">
-              <button class="graph-tool-btn" onclick="fitGraph()" title="Fit View">⛶ Fit</button>
-              <button class="graph-tool-btn" onclick="togglePhysics()" id="phys-btn" title="Toggle Physics">⚡ Physics</button>
+          <div class="graph-box">
+            <div class="graph-actions">
+              <button class="graph-btn" onclick="fitGraph()" title="Fit View">Fit</button>
+              <button class="graph-btn" onclick="togglePhysics()" id="phys-btn" title="Toggle Physics">Physics</button>
             </div>
             <div id="net"></div>
           </div>
 
           <!-- Selected Node Inspector Drawer -->
           <div id="node-inspector">
-            <div class="inspector-header">
-              <span class="inspector-title" id="insp-name">Node Inspector</span>
-              <span id="insp-label" class="badge-falkor">Service</span>
+            <div class="inspector-head">
+              <span class="inspector-label" id="insp-name">NODE INSPECTOR</span>
+              <span id="insp-label" class="badge-mono">SERVICE</span>
             </div>
-            <div id="insp-props" class="inspector-props"></div>
-            <div id="insp-edges" style="margin-top: 8px; border-top: 1px solid var(--card-border); padding-top: 6px; font-size: 11px;"></div>
+            <div id="insp-props" class="inspector-grid"></div>
+            <div id="insp-edges" style="margin-top: 8px; border-top: 1px solid var(--card-border); padding-top: 6px; font-size: 11px; font-family: 'Geist Mono', monospace;"></div>
           </div>
         </div>
 
-        <!-- Tab 2: Agent Memory Graph -->
-        <div id="tab-memory" class="tab-pane">
-          <div class="mem-grid">
-            <div class="mem-card">
-              <h4>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Durable Semantic Facts (Isolated Per User)
-              </h4>
+        <!-- Tab 2: Agent Memory Deck -->
+        <div id="tab-memory" class="tab-view">
+          <div class="memory-stack">
+            <div class="memory-card">
+              <div class="memory-card-title">// Durable Semantic Facts (mem_&lt;tenant&gt;_&lt;user&gt;)</div>
               <div id="mem-facts">Loading memory facts...</div>
             </div>
 
-            <div class="mem-card">
-              <h4>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                Episodic Conversation Log (Context Continuity)
-              </h4>
+            <div class="memory-card">
+              <div class="memory-card-title">// Episodic Conversation Episodes</div>
               <div id="mem-episodes">Loading past episodes...</div>
             </div>
 
-            <div class="mem-card">
-              <h4>Teach Agent New Fact</h4>
-              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <input id="mem-subj" placeholder="Entity (e.g. redis-cache)" style="flex:1; min-width: 110px;">
-                <input id="mem-attr" placeholder="Attribute (e.g. primary_oncall)" style="flex:1; min-width: 120px;">
-                <input id="mem-val" placeholder="Value (e.g. Ben)" style="flex:1; min-width: 100px;">
-                <button class="btn-primary" onclick="teachMemoryDirect()">Commit Fact</button>
+            <div class="memory-card">
+              <div class="memory-card-title">// Teach Memory Fact</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <input id="mem-subj" placeholder="Entity (e.g. redis-cache)" style="flex:1; min-width:110px;">
+                <input id="mem-attr" placeholder="Attribute (e.g. oncall)" style="flex:1; min-width:110px;">
+                <input id="mem-val" placeholder="Value (e.g. Ben)" style="flex:1; min-width:110px;">
+                <button class="btn-solid-white" onclick="teachMemoryDirect()">Commit Fact</button>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Tab 3: Swarm Handoffs -->
-        <div id="tab-handoffs" class="tab-pane">
-          <div class="mem-card">
-            <h4>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-              Shared Multi-Agent Coordination Graph (`shared_<tenant>`)
-            </h4>
+        <div id="tab-handoffs" class="tab-view">
+          <div class="memory-card">
+            <div class="memory-card-title">// Multi-Agent Coordination Handoffs (shared_&lt;tenant&gt;)</div>
             <div id="shared-handoffs-list" style="display: flex; flex-direction: column; gap: 8px;">
               Loading coordination handoffs...
             </div>
@@ -978,7 +979,6 @@
     </div>
   </main>
 
-  <!-- Toast Notification -->
   <div id="toast"></div>
 
   <script>
@@ -986,24 +986,25 @@
     const T = () => $('tenant').value;
     const U = () => $('user').value;
 
-    const COL = {
-      Service: '#4da3ff',
-      Person: '#7ee787',
-      Team: '#d2a8ff',
-      Deploy: '#f2cc60',
-      Incident: '#ff7b72',
-      Decision: '#79c0ff',
-      Document: '#8b98a8',
-      Runbook: '#ffa657'
+    // High-Contrast Monochrome / Grayscale Palette for Graph Nodes
+    const NODE_STYLES = {
+      Service:  { bg: '#ffffff', border: '#ffffff', text: '#000000', shape: 'box', size: 14 },
+      Deploy:   { bg: '#e4e4e7', border: '#a1a1aa', text: '#09090b', shape: 'dot', size: 9 },
+      Incident: { bg: '#18181b', border: '#ffffff', text: '#ffffff', shape: 'dot', size: 11 },
+      Person:   { bg: '#a1a1aa', border: '#71717a', text: '#09090b', shape: 'dot', size: 9 },
+      Team:     { bg: '#71717a', border: '#52525b', text: '#ffffff', shape: 'dot', size: 10 },
+      Decision: { bg: '#d4d4d8', border: '#a1a1aa', text: '#09090b', shape: 'dot', size: 9 },
+      Document: { bg: '#27272a', border: '#52525b', text: '#e4e4e7', shape: 'dot', size: 8 },
+      Runbook:  { bg: '#3f3f46', border: '#71717a', text: '#f4f4f5', shape: 'dot', size: 8 }
     };
 
     let nodes, edges, net, physicsEnabled = true;
 
     function toast(msg) {
       const el = $('toast');
-      el.innerHTML = `<span>✓</span> <span>${msg}</span>`;
-      el.style.display = 'flex';
-      setTimeout(() => { el.style.display = 'none'; }, 3200);
+      el.textContent = '✓ ' + msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 3000);
     }
 
     const post = (u, b) => fetch(u, {
@@ -1013,8 +1014,8 @@
     }).then(r => r.json());
 
     function switchTab(name) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(p => p.classList.remove('active'));
       event.target.classList.add('active');
       $('tab-' + name).classList.add('active');
       if (name === 'graph' && net) {
@@ -1025,7 +1026,6 @@
       }
     }
 
-    // Markdown-like formatter for clean dashboard display
     function formatMarkdown(text) {
       if (!text) return '';
       let html = text
@@ -1038,7 +1038,6 @@
         .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
         .replace(/\n\n/g, '<br><br>');
 
-      // Tables
       if (html.includes('|')) {
         const lines = html.split('<br>');
         let inTable = false, tableHtml = '<table>';
@@ -1073,9 +1072,9 @@
     }
 
     async function seed() {
-      toast(`Seeding FalkorDB graph for tenant '${T()}'...`);
+      toast(`Seeding FalkorDB graph for '${T()}'...`);
       await post('/api/seed', { tenant: T() });
-      toast(`Graph seeded with synthetic topology & historical incidents.`);
+      toast(`Graph seeded.`);
       await draw();
       loadMemory();
       loadHandoffs();
@@ -1084,7 +1083,7 @@
     async function draw() {
       const rows = await fetch('/api/graph?tenant=' + T()).then(r => r.json()).catch(() => []);
       $('edge-count-badge').textContent = `${rows.length} Graph Edges Active`;
-      
+
       const n = {}, e = [];
       rows.forEach(r => {
         n[r.a] = r.al;
@@ -1094,25 +1093,28 @@
           to: r.b,
           label: r.rel,
           arrows: 'to',
-          font: { size: 9, color: '#94a3b8', face: 'JetBrains Mono', strokeWidth: 0 },
-          color: { color: 'rgba(71, 85, 105, 0.45)', highlight: '#8b5cf6' }
+          font: { size: 9, color: '#71717a', face: 'Geist Mono', strokeWidth: 0 },
+          color: { color: 'rgba(255, 255, 255, 0.18)', highlight: '#ffffff' }
         });
       });
 
-      nodes = new vis.DataSet(Object.entries(n).map(([id, label]) => ({
-        id,
-        label: id,
-        color: {
-          background: COL[label] || '#94a3b8',
-          border: 'rgba(255,255,255,0.2)',
-          highlight: { background: COL[label] || '#fff', border: '#ff7a45' }
-        },
-        font: { color: '#f1f5f9', size: 11, face: 'Inter' },
-        shape: label === 'Service' ? 'box' : 'dot',
-        size: label === 'Service' ? 14 : 9,
-        borderWidth: 1,
-        margin: 6
-      })));
+      nodes = new vis.DataSet(Object.entries(n).map(([id, label]) => {
+        const st = NODE_STYLES[label] || { bg: '#888', border: '#aaa', text: '#fff', shape: 'dot', size: 9 };
+        return {
+          id,
+          label: id,
+          color: {
+            background: st.bg,
+            border: st.border,
+            highlight: { background: '#ffffff', border: '#ffffff' }
+          },
+          font: { color: st.text, size: 11, face: 'Geist' },
+          shape: st.shape,
+          size: st.size,
+          borderWidth: 1,
+          margin: 6
+        };
+      }));
 
       edges = new vis.DataSet(e);
 
@@ -1123,8 +1125,8 @@
           enabled: true,
           solver: 'forceAtlas2Based',
           forceAtlas2Based: {
-            gravitationalConstant: -35,
-            centralGravity: 0.008,
+            gravitationalConstant: -38,
+            centralGravity: 0.009,
             springLength: 85,
             springConstant: 0.18
           },
@@ -1147,30 +1149,27 @@
     function togglePhysics() {
       physicsEnabled = !physicsEnabled;
       net.setOptions({ physics: { enabled: physicsEnabled } });
-      $('phys-btn').textContent = physicsEnabled ? '⚡ Physics On' : '⏸ Physics Off';
+      $('phys-btn').textContent = physicsEnabled ? 'Physics' : 'Physics Off';
     }
 
     function fitGraph() {
-      if (net) net.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+      if (net) net.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
     }
 
     async function inspectNode(name) {
       const res = await fetch(`/api/node?name=${encodeURIComponent(name)}&tenant=${T()}`).then(r => r.json()).catch(() => null);
       if (!res || !res.node) return;
-      
+
       const insp = $('node-inspector');
       insp.style.display = 'block';
       $('insp-name').textContent = name;
-      $('insp-label').textContent = res.node.label;
-      $('insp-label').style.background = COL[res.node.label] ? `${COL[res.node.label]}33` : 'rgba(139,92,246,0.2)';
-      $('insp-label').style.borderColor = COL[res.node.label] || '#8b5cf6';
-      $('insp-label').style.color = COL[res.node.label] || '#fff';
+      $('insp-label').textContent = res.node.label.toUpperCase();
 
       const propsDiv = $('insp-props');
       propsDiv.innerHTML = '';
       for (const [k, v] of Object.entries(res.node.props || {})) {
         if (k === 'name') continue;
-        propsDiv.innerHTML += `<span style="color:var(--fg-dim)">${k}:</span><span style="color:#fcd34d">${v}</span>`;
+        propsDiv.innerHTML += `<span style="color:var(--fg-dim)">${k}:</span><span style="color:#ffffff">${v}</span>`;
       }
 
       const edgesDiv = $('insp-edges');
@@ -1189,7 +1188,7 @@
         borderWidth: set.has(n.id) ? 3 : 1,
         color: set.has(n.id) ? {
           background: n.color.background || n.color,
-          border: '#ff7a45'
+          border: '#ffffff'
         } : n.color
       })));
     }
@@ -1200,7 +1199,7 @@
       $('trace-count-badge').textContent = `${trace.length} FalkorDB Queries Executed`;
 
       if (trace.length === 0) {
-        $('trace').innerHTML = '<div style="color: var(--fg-dim); font-size: 11.5px; padding: 8px;">No Cypher queries generated for this step.</div>';
+        $('trace').innerHTML = '<div style="color: var(--fg-dim); font-size: 11px; padding: 6px; font-family: \'Geist Mono\', monospace;">No Cypher queries generated.</div>';
         return;
       }
 
@@ -1216,21 +1215,21 @@
         let tableHtml = '';
         if (t.rows && t.rows.length > 0) {
           const keys = Object.keys(t.rows[0]);
-          tableHtml = `<div class="rows-table-wrap"><table class="rows-table"><thead><tr>` +
+          tableHtml = `<div class="table-scroll"><table class="data-table"><thead><tr>` +
             keys.map(k => `<th>${k}</th>`).join('') + `</tr></thead><tbody>` +
             t.rows.map(r => `<tr>` + keys.map(k => `<td>${typeof r[k] === 'object' ? JSON.stringify(r[k]) : r[k]}</td>`).join('') + `</tr>`).join('') +
             `</tbody></table></div>`;
         } else {
-          tableHtml = `<div style="font-size:11px; color:var(--fg-dim);">Returned 0 rows</div>`;
+          tableHtml = `<div style="font-size:11px; color:var(--fg-dim); font-family: 'Geist Mono', monospace;">Returned 0 rows</div>`;
         }
 
         d.innerHTML = `
           <summary class="trace-summary">
-            <span class="tool-name">⚡ ${t.tool}</span>
-            <span class="tool-meta">${argsStr} → ${rowCount} rows</span>
+            <span class="tool-ident">⚡ ${t.tool}</span>
+            <span class="tool-count">${argsStr} → ${rowCount} rows</span>
           </summary>
-          <div class="trace-content">
-            <div class="cypher-box">${t.cypher}</div>
+          <div class="trace-body">
+            <div class="cypher-code">${t.cypher}</div>
             ${tableHtml}
           </div>
         `;
@@ -1244,24 +1243,24 @@
       const question = $('q').value.trim();
       if (!question) return;
 
-      $('ans').innerHTML = '<div style="color:var(--accent); padding:20px; text-align:center;">Walking FalkorDB Graph & Reasoning...</div>';
+      $('ans').innerHTML = '<div style="color:var(--fg-secondary); padding:24px; text-align:center; font-family:\'Geist Mono\', monospace;">Traversing FalkorDB Graph & Reasoning...</div>';
       $('mode-tag-slot').innerHTML = '';
 
       try {
         const r = await post('/api/ask', { question, tenant: T(), user: U() });
-        $('mode-tag-slot').innerHTML = `<span class="mode-tag">⚡ ${r.mode}</span>`;
+        $('mode-tag-slot').innerHTML = `<span class="engine-pill">⚡ ${r.mode}</span>`;
         $('ans').innerHTML = formatMarkdown(r.answer);
         renderTrace(r.trace);
         loadMemory();
       } catch (err) {
-        $('ans').innerHTML = `<div style="color:var(--brand-red)">Error: ${err.message}</div>`;
+        $('ans').innerHTML = `<div style="color:#ffffff">Error: ${err.message}</div>`;
       }
     }
 
     async function inc() {
       const svc = $('q').value.trim() || 'postgres-main';
-      $('ans').innerHTML = '<div style="color:var(--brand-amber); padding:20px; text-align:center;">Autonomous Incident Swarm active: Triage ➔ Investigator ➔ Scribe...</div>';
-      $('mode-tag-slot').innerHTML = `<span class="mode-tag swarm">🔄 Autonomous Multi-Agent Swarm</span>`;
+      $('ans').innerHTML = '<div style="color:var(--fg-secondary); padding:24px; text-align:center; font-family:\'Geist Mono\', monospace;">Swarm executing: Triage Agent ➔ Investigator Agent ➔ Scribe Agent...</div>';
+      $('mode-tag-slot').innerHTML = `<span class="engine-pill">🔄 Autonomous Multi-Agent Swarm</span>`;
 
       try {
         const r = await post('/api/incident', { service: svc, tenant: T(), user: U() });
@@ -1269,15 +1268,11 @@
         let stagesHtml = `<div class="agent-pipeline">`;
 
         r.stages.forEach(s => {
-          const cls = s.agent.toLowerCase();
           stagesHtml += `
-            <div class="agent-stage-card ${cls}">
-              <div class="agent-stage-header">
-                <span class="agent-name-badge">
-                  <span>🤖 ${s.agent} Agent</span>
-                  <span class="handoff-arrow">➔ ${s.handoff_to}</span>
-                </span>
-                <span class="badge-falkor" style="font-size:9.5px">Handoff Stored</span>
+            <div class="stage-card">
+              <div class="stage-card-header">
+                <span class="stage-agent-name">// ${s.agent} Agent ➔ ${s.handoff_to}</span>
+                <span class="badge-mono">Handoff Stored</span>
               </div>
               <div>${formatMarkdown(s.summary)}</div>
             </div>
@@ -1286,8 +1281,8 @@
         });
 
         stagesHtml += `
-          <div style="font-size: 11px; color: var(--fg-dim); margin-top: 6px;">
-            📌 Incident Case: <code>${r.case}</code> permanently recorded in FalkorDB shared graph <code>shared_${T()}</code>.
+          <div style="font-size: 11px; color: var(--fg-dim); margin-top: 6px; font-family: 'Geist Mono', monospace;">
+            📌 Case reference: <code>${r.case}</code> committed to FalkorDB shared graph <code>shared_${T()}</code>.
           </div>
         </div>`;
 
@@ -1296,7 +1291,7 @@
         loadMemory();
         loadHandoffs();
       } catch (err) {
-        $('ans').innerHTML = `<div style="color:var(--brand-red)">Error running swarm: ${err.message}</div>`;
+        $('ans').innerHTML = `<div>Error: ${err.message}</div>`;
       }
     }
 
@@ -1306,24 +1301,24 @@
         const factsDiv = $('mem-facts');
         if (m.facts && m.facts.length > 0) {
           factsDiv.innerHTML = m.facts.map(f => `
-            <div class="fact-item">
-              <div><b>${f.entity}</b>.${f.attribute} = <span style="color:#fcd34d">${f.value}</span></div>
-              <span class="fact-pill ${f.current ? 'active' : 'superseded'}">${f.current ? 'Active' : 'Superseded'}</span>
+            <div class="fact-row">
+              <div><b>${f.entity}</b>.${f.attribute} = <span style="color:#ffffff">${f.value}</span></div>
+              <span class="status-pill-mono ${f.current ? 'active' : 'superseded'}">${f.current ? 'Active' : 'Superseded'}</span>
             </div>
           `).join('');
         } else {
-          factsDiv.innerHTML = '<div style="color:var(--fg-dim); font-size:11px;">No facts stored yet.</div>';
+          factsDiv.innerHTML = '<div style="color:var(--fg-dim); font-size:11px; font-family:\'Geist Mono\', monospace;">No facts stored yet.</div>';
         }
 
         const epDiv = $('mem-episodes');
         if (m.episodes && m.episodes.length > 0) {
           epDiv.innerHTML = m.episodes.map(e => `
-            <div class="episode-item">
-              <span style="color:var(--accent);">Q:</span> ${e.question}
+            <div style="padding:6px 0; border-bottom:1px solid #1a1a1e; font-size:11.5px; font-family:\'Geist Mono\', monospace; color:#d4d4d8;">
+              <span style="color:var(--fg-dim);">[ep]</span> ${e.question}
             </div>
           `).join('');
         } else {
-          epDiv.innerHTML = '<div style="color:var(--fg-dim); font-size:11px;">No interaction episodes recorded.</div>';
+          epDiv.innerHTML = '<div style="color:var(--fg-dim); font-size:11px; font-family:\'Geist Mono\', monospace;">No episodes recorded.</div>';
         }
       } catch (err) {}
     }
@@ -1344,19 +1339,19 @@
         const el = $('shared-handoffs-list');
         if (hs && hs.length > 0) {
           el.innerHTML = hs.map(h => `
-            <div class="agent-stage-card" style="font-size: 11.5px;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <div class="stage-card" style="font-size: 11.5px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-family:\'Geist Mono\', monospace;">
                 <b>Case: <code>${h.case}</code></b>
                 <span style="color:var(--fg-dim)">${new Date(h.ts).toLocaleTimeString()}</span>
               </div>
-              <div style="color:var(--accent); font-weight:600; margin-bottom:2px;">
-                ${h.frm} ➔ ${h.to}
+              <div style="color:#ffffff; font-weight:600; margin-bottom:4px; font-family:\'Geist Mono\', monospace;">
+                // ${h.frm} ➔ ${h.to}
               </div>
-              <div style="color:var(--fg);">${formatMarkdown(h.summary)}</div>
+              <div style="color:#d4d4d8;">${formatMarkdown(h.summary)}</div>
             </div>
           `).join('');
         } else {
-          el.innerHTML = '<div style="color:var(--fg-dim); font-size:11.5px;">No multi-agent handoffs recorded yet in shared graph.</div>';
+          el.innerHTML = '<div style="color:var(--fg-dim); font-size:11.5px; font-family:\'Geist Mono\', monospace;">No multi-agent handoffs recorded yet in shared graph.</div>';
         }
       } catch (err) {}
     }
@@ -1367,7 +1362,6 @@
       loadHandoffs();
     };
 
-    // Auto-seed and initialize on load
     seed();
   </script>
 </body>
