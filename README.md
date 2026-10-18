@@ -1,44 +1,131 @@
-# Hindsight — an on-call copilot whose context is a graph (FalkorDB)
+# Hindsight — Graph-Native Autonomous On-Call Copilot & SRE Swarm
 
-**Tracks entered: 1 (Agents That Act on Connected Data), 2 (Agent Memory & Coordination), 3 (Company Brain).**
+> **WeMakeDevs & FalkorDB Hackathon Submission**  
+> **Tracks Entered:**  
+> 🏆 **Track 1:** Agents That Act on Connected Data  
+> 🏆 **Track 2:** Agent Memory & Coordination  
+> 🏆 **Track 3:** Company Brain  
 
-An incident agent that answers "what broke, what's the blast radius, who do I page, has this happened before, and
-why was it built this way?" by walking a FalkorDB graph — and shows the exact Cypher + node path behind every answer.
-**Remove FalkorDB and the product does nothing**: every tool is a Cypher query or graph algorithm.
+---
 
-## Run (local, 1 minute)
+## 🎯 What is Hindsight?
+When a critical production outage strikes at 3 AM, on-call engineers face the same 5 high-stress questions:
+1. **What broke?** (Which recent deployment or change in the dependency chain caused the failure?)
+2. **What's the blast radius?** (Which downstream tier-1/tier-2 services are transitively impacted?)
+3. **Who do I page?** (Who has resolved this specific failure mode before, and which team owns the affected service?)
+4. **Has this happened before?** (What incident precedents and active runbooks exist?)
+5. **Why was it built this way?** (What architectural RFC decisions and postmortems justify this configuration?)
+
+Traditional RAG and vector databases hallucinate, fail at multi-hop graph traversals, and cannot trace recursive service dependencies. 
+
+**Hindsight solves this by placing FalkorDB at the dead center of incident response.**
+> **Rule 3 Compliance:** Remove FalkorDB and the product does nothing. Every single copilot action, root-cause calculation, and multi-agent coordination step is executed as a Cypher query or native FalkorDB graph algorithm (`algo.pageRank`, `shortestPath`, variable-length traversals).
+
+---
+
+## 🚀 Quickstart (1 Minute Local Setup)
+
+### Option A: Docker Compose (Recommended)
 ```bash
-export ANTHROPIC_API_KEY=sk-...        # optional; without it a deterministic planner drives the same graph tools
-docker compose up --build              # FalkorDB :6379, Browser :3001, app :8000
-open http://localhost:8000             # graph auto-seeds with synthetic data
-```
-Without Docker: `docker run -p 6379:6379 falkordb/falkordb`, `pip install -r requirements.txt`, `uvicorn app.main:app`.
+# 1. Start FalkorDB (:6379), FalkorDB Visual Browser (:3001), and Hindsight App (:8000)
+docker compose up --build
 
-## Graph data model (one isolated graph per tenant / per user)
-**`brain_<tenant>`** — company knowledge
+# 2. Open the Mission Control Dashboard
+open http://localhost:8000
 ```
-(Team)-[:OWNS]->(Service)   (Person)-[:MEMBER_OF]->(Team)   (Service)-[:DEPENDS_ON]->(Service)
-(Deploy)-[:DEPLOYED_TO]->(Service)   (Deploy)-[:AUTHORED_BY]->(Person)
-(Incident)-[:AFFECTED]->(Service)   (Incident)-[:CAUSED_BY]->(Deploy)   (Incident)-[:FOLLOWED]->(Runbook)
-(Person)-[:RESOLVED]->(Incident)   (Runbook)-[:DOCUMENTS]->(Service)
-(Decision)-[:ABOUT]->(Service)  -[:MADE_BY]->(Person)  -[:SOURCED_FROM]->(Document)  (Decision)-[:SUPERSEDES]->(Decision)
+
+### Option B: Bare Metal (Without Docker)
+```bash
+docker run -d -p 6379:6379 -p 3001:3000 --name falkordb falkordb/falkordb:latest
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-**`mem_<tenant>_<user>`** — private memory: `(Episode)-[:MENTIONS]->(Entity)`, `(Fact)-[:ABOUT]->(Entity)`, `(Fact)-[:SUPERSEDES]->(Fact)`
-**`shared_<tenant>`** — agent coordination: `(Handoff {frm,to,summary})-[:FOR]->(Case)`
 
-## Cypher / algorithms the product depends on (`app/tools.py`)
-| Tool | Technique |
-|---|---|
-| `blast_radius` | variable-length traversal `-[:DEPENDS_ON*1..4]->` + `min(length(p))` |
-| `recent_changes` | `*0..3` upstream walk joined to Deploy → Author |
-| `who_knows` | Person→RESOLVED→Incident→AFFECTED→Service aggregation + team ownership |
-| `decision_trace` | Decision→SOURCED_FROM→Document, `SUPERSEDES` to flag stale decisions |
-| `critical_services` | **`algo.pageRank('Service','DEPENDS_ON')`** |
-| `path_between` | **`shortestPath((x)-[*..6]-(y))`** — the "Why" path |
-| `recall` / `remember` | episodic + semantic memory, versioned facts via `SUPERSEDES` |
+---
 
-## Track mapping
-1. **Act on connected data** — LLM chooses graph tools via tool-use; multi-hop reasoning; explainable trace in the UI.
-2. **Memory & coordination** — per-user graphs (tenant isolation), episodic/semantic memory, Triage→Investigator→Scribe handoffs through the shared graph.
-3. **Company brain** — services/people/deploys/incidents/decisions/docs in one graph; sources on every decision; `SUPERSEDES` keeps knowledge current.
+## 🧠 Multi-Graph Architecture (Isolation & Multitenancy)
+
+Hindsight leverages FalkorDB's multi-graph capability to maintain strict physical isolation between company knowledge, private user memories, and multi-agent coordination state:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ 1. Company Brain Graph: brain_<tenant>                                │
+│                                                                        │
+│   (Team) ──[:OWNS]──> (Service) <──[:DEPENDS_ON*]── (Service)          │
+│      ▲                                                    ▲            │
+│  [:MEMBER_OF]                                      [:DEPLOYED_TO]      │
+│      │                                                    │            │
+│   (Person) <──[:AUTHORED_BY]──────────────────────── (Deploy)          │
+│      │                                                    ▲            │
+│  [:RESOLVED]                                       [:CAUSED_BY]        │
+│      ▼                                                    │            │
+│  (Incident) ──[:AFFECTED]──> (Service)                    │            │
+│      │                                                    │            │
+│  [:FOLLOWED]                                              │            │
+│      ▼                                                    │            │
+│  (Runbook) ──[:DOCUMENTS]──> (Service)                    │            │
+│                                                           │            │
+│  (Decision) ──[:ABOUT]──> (Service)                       │            │
+│      ├──[:MADE_BY]──> (Person)                            │            │
+│      ├──[:SOURCED_FROM]──> (Document / RFC)               │            │
+│      └──[:SUPERSEDES]──> (Older Decision)                 │            │
+└────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────┐
+│ 2. Isolated Agent Memory Graph: mem_<tenant>_<user>                    │
+│                                                                        │
+│   (Episode) ──[:MENTIONS]──> (Entity) <──[:ABOUT]── (Fact {current})   │
+│                                                        │               │
+│                                                 [:SUPERSEDES]          │
+│                                                        ▼               │
+│                                              (Historical Fact)         │
+└────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────┐
+│ 3. Multi-Agent Shared Coordination Graph: shared_<tenant>              │
+│                                                                        │
+│   (Handoff: Triage ➔ Investigator) ──[:FOR]──> (Case: <case_id>)       │
+│   (Handoff: Investigator ➔ Scribe) ──[:FOR]──> (Case: <case_id>)       │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⚡ Core Cypher Queries & Graph Algorithms (`app/tools.py`)
+
+| Tool Name | FalkorDB Cypher Technique | Real-World SRE Purpose |
+| :--- | :--- | :--- |
+| **`blast_radius`** | Variable-length path traversal `-[:DEPENDS_ON*1..4]->` with `min(length(p))` | Instantly identifies every downstream service impacted by a dependency failure. |
+| **`recent_changes`** | Upstream transitive walk `*0..3` joined to `Deploy` and `Author` | Discovers suspect deployments authored by engineers in the failure tree. |
+| **`who_knows`** | Graph aggregation: `Person→RESOLVED→Incident→AFFECTED→Service` + `Team→OWNS` | Recommends specific engineers with historical MTTR resolution experience. |
+| **`critical_services`** | **`CALL algo.pageRank('Service', 'DEPENDS_ON')`** | Calculates topological centrality to discover single points of failure across infrastructure. |
+| **`path_between`** | **`shortestPath((x)-[*..6]-(y))`** | Explains multi-hop connectivity between any two entities in the company graph. |
+| **`decision_trace`** | Lineage traversal: `Decision→SOURCED_FROM→Document` + `SUPERSEDES` | Traces architecture decisions back to RFCs; warns if a decision was superseded. |
+| **`recall` / `remember`** | Dual-nature memory: `Episode` (interaction log) + versioned `Fact` (`SUPERSEDES`) | Prevents duplicate investigations; persists engineer preferences across sessions. |
+
+---
+
+## 🏆 Hackathon Track Alignment
+
+### 1. Track 01 — Agents That Act on Connected Data
+- LLM autonomous tool calling selecting multi-hop graph queries.
+- Graph traversals directly determine on-call decisions and blast radius mitigation.
+- Complete explainability: every answer displays the exact FalkorDB Cypher queries and node traversal paths in the UI.
+
+### 2. Track 02 — Agent Memory & Coordination
+- **Tenant & User Memory Isolation:** `mem_<tenant>_<user>` ensures each SRE's context remains private.
+- **Fact Versioning via Graph:** New knowledge automatically links `(new_fact)-[:SUPERSEDES]->(old_fact)`, invalidating stale facts without loss of history.
+- **Autonomous Swarm Coordination:** 3 specialized agents (**Triage Agent** ➔ **Investigator Agent** ➔ **Scribe Agent**) coordinate exclusively through handoff nodes in `shared_<tenant>`.
+
+### 3. Track 03 — Company Brain
+- Unified enterprise graph connecting Services, Deploys, Incidents, Runbooks, People, Teams, RFCs, and Decisions.
+- Every architectural choice is linked to source documentation (`RFC-27`, Postmortems).
+- Graph-native ownership and domain knowledge mapping (`who_knows`).
+
+---
+
+## 📋 Hackathon Rule Disclosures
+- **Primary Database:** FalkorDB (low-latency Graph Database).
+- **Synthetic Data:** All services, engineers, deployments, incidents, and decisions are synthetic and provided in `app/seed.py`.
+- **AI Tooling Disclosure (Rule 11):** AI assistant tooling (Claude) was utilized as a help.
 
