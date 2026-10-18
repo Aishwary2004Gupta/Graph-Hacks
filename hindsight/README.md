@@ -23,6 +23,17 @@ Traditional RAG and vector databases hallucinate, fail at multi-hop graph traver
 
 ---
 
+## 🎥 Demo Video & Visuals
+- **Full HD 1080p Walkthrough Video:** [hindsight_demo.mp4](./demo_assets/hindsight_demo.mp4) (Recorded live at 1920x1080)
+- **High-Resolution Screenshots:**
+  - [01 Incident Triage Report](./demo_assets/01_investigation_triage.png)
+  - [02 FalkorDB Cypher Audit Trail](./demo_assets/02_cypher_audit_trail.png)
+  - [03 Autonomous 3-Agent Swarm Brief](./demo_assets/03_swarm_incident_brief.png)
+  - [04 Shared Graph Coordination Handoffs](./demo_assets/04_shared_agent_handoffs.png)
+  - [05 Agent Memory Fact Versioning](./demo_assets/05_agent_memory_versioning.png)
+
+---
+
 ## 🚀 Quickstart (1 Minute Local Setup)
 
 ### Option A: Docker Compose (Recommended)
