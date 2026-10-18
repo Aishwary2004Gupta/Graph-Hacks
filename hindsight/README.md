@@ -129,8 +129,8 @@ Hindsight leverages FalkorDB's multi-graph capability to maintain strict physica
 
 ---
 
-## 📋 Hackathon Rule Disclosures (Rules 10–13)
+## 📋 Hackathon Rule Disclosures
 - **Primary Database:** FalkorDB (low-latency Graph Database).
 - **Synthetic Data:** All services, engineers, deployments, incidents, and decisions are synthetic and provided in `app/seed.py`.
-- **AI Tooling Disclosure (Rule 11):** AI assistant tooling (Claude) was utilized for initial code scaffolding and styling. The entire graph model, Cypher queries, multi-agent architecture, and technical decisions are thoroughly understood and explained by the author.
+- **AI Tooling Disclosure (Rule 11):** AI assistant tooling (Claude) was utilized as a help.
 
