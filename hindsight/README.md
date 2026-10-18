@@ -1,4 +1,4 @@
-# Hindsight ⚡ — Graph-Native Autonomous On-Call Copilot & SRE Swarm
+# Hindsight — Graph-Native Autonomous On-Call Copilot & SRE Swarm
 
 > **WeMakeDevs & FalkorDB Hackathon Submission**  
 > **Tracks Entered:**  
