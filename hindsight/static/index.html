@@ -1,0 +1,1374 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hindsight — Autonomous Graph-Native On-Call Copilot (FalkorDB)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-surface: #0f172a;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(56, 75, 112, 0.35);
+      --card-border-hover: rgba(139, 92, 246, 0.45);
+      --fg: #f1f5f9;
+      --fg-muted: #94a3b8;
+      --fg-dim: #64748b;
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.25);
+      --brand-orange: #ff7a45;
+      --brand-cyan: #06b6d4;
+      --brand-green: #10b981;
+      --brand-red: #ef4444;
+      --brand-amber: #f59e0b;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.15), transparent),
+        radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.05), transparent 40%);
+      color: var(--fg);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 13.5px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #7c3aed, #ff7a45);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+    }
+    .brand-logo svg {
+      width: 18px;
+      height: 18px;
+      stroke: #fff;
+    }
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-text h1 span {
+      background: linear-gradient(90deg, #a78bfa, #ff7a45);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .badge-falkor {
+      font-size: 10.5px;
+      font-weight: 600;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--fg-muted);
+    }
+
+    .telemetry-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--fg-muted);
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--card-border);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--brand-green);
+      box-shadow: 0 0 8px var(--brand-green);
+    }
+    .status-dot.pulse {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.6; transform: scale(0.95); }
+      50% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 0.6; transform: scale(0.95); }
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--fg-muted);
+    }
+    select, button, input {
+      font-family: inherit;
+      font-size: 12.5px;
+      color: var(--fg);
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 5px 9px;
+      transition: all 0.2s ease;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    button {
+      cursor: pointer;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover {
+      background: rgba(51, 65, 85, 0.9);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+    button.btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3);
+    }
+    button.btn-primary:hover {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
+    }
+    button.btn-amber {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.25));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+    button.btn-amber:hover {
+      background: rgba(245, 158, 11, 0.3);
+    }
+
+    /* Subheader Scenarios Bar */
+    .scenario-banner {
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid var(--card-border);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .scenario-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--brand-orange);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .scenario-chips {
+      display: flex;
+      gap: 8px;
+    }
+    .chip {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--card-border);
+      color: var(--fg-muted);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip:hover {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #e2e8f0;
+      transform: translateY(-1px);
+    }
+
+    /* Main Grid Layout */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      padding: 16px 20px;
+      max-width: 1720px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    @media (max-width: 1180px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s ease;
+    }
+    .card:hover {
+      border-color: rgba(56, 75, 112, 0.6);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(56, 75, 112, 0.25);
+      padding-bottom: 8px;
+    }
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--accent);
+    }
+
+    /* Copilot Query Input Box */
+    .query-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrapper svg {
+      position: absolute;
+      left: 12px;
+      width: 16px;
+      height: 16px;
+      color: var(--fg-dim);
+      pointer-events: none;
+    }
+    #q {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      font-size: 13.5px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--card-border);
+      color: #fff;
+    }
+    #q::placeholder {
+      color: var(--fg-dim);
+    }
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Copilot Output Styles */
+    .answer-container {
+      background: rgba(10, 15, 29, 0.9);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      min-height: 120px;
+      max-height: 480px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .mode-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #c4b5fd;
+      margin-bottom: 10px;
+    }
+    .mode-tag.swarm {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fcd34d;
+    }
+
+    /* Rich Report Rendering inside Answer */
+    .answer-container h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .answer-container h4 {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+    .answer-container blockquote {
+      border-left: 3px solid var(--accent);
+      background: rgba(139, 92, 246, 0.08);
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 0;
+      color: #e2e8f0;
+    }
+    .answer-container table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 12.5px;
+    }
+    .answer-container th {
+      background: rgba(30, 41, 59, 0.7);
+      padding: 6px 10px;
+      text-align: left;
+      border: 1px solid var(--card-border);
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .answer-container td {
+      padding: 6px 10px;
+      border: 1px solid rgba(56, 75, 112, 0.25);
+    }
+    .answer-container ul {
+      margin-left: 20px;
+      margin-bottom: 8px;
+    }
+    .answer-container li {
+      margin-bottom: 4px;
+    }
+    .answer-container code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      background: rgba(30, 41, 59, 0.8);
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: #fcd34d;
+    }
+    .answer-container hr {
+      border: 0;
+      border-top: 1px solid var(--card-border);
+      margin: 14px 0;
+    }
+
+    /* Multi-Agent Incident Stages */
+    .agent-pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .agent-stage-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--card-border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .agent-stage-card.triage { border-left-color: var(--brand-orange); }
+    .agent-stage-card.investigator { border-left-color: var(--brand-cyan); }
+    .agent-stage-card.scribe { border-left-color: var(--brand-green); }
+
+    .agent-stage-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 11.5px;
+    }
+    .agent-name-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .handoff-arrow {
+      color: var(--fg-dim);
+    }
+
+    /* Cypher Graph Trace Accordion */
+    .trace-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    details.trace-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    details.trace-item[open] {
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+    summary.trace-summary {
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 500;
+      user-select: none;
+    }
+    summary.trace-summary:hover {
+      background: rgba(30, 41, 59, 0.4);
+    }
+    .tool-name {
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+    .tool-meta {
+      font-size: 11px;
+      color: var(--fg-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .trace-content {
+      padding: 10px 12px;
+      background: rgba(10, 15, 29, 0.9);
+      border-top: 1px solid rgba(56, 75, 112, 0.25);
+    }
+    .cypher-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: #060911;
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 75, 112, 0.3);
+      color: #38bdf8;
+      overflow-x: auto;
+      margin-bottom: 8px;
+    }
+    .rows-table-wrap {
+      max-height: 180px;
+      overflow: auto;
+    }
+    .rows-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+    .rows-table th {
+      background: rgba(30, 41, 59, 0.8);
+      padding: 4px 8px;
+      border: 1px solid var(--card-border);
+      color: #94a3b8;
+      position: sticky;
+      top: 0;
+    }
+    .rows-table td {
+      padding: 4px 8px;
+      border: 1px solid rgba(56, 75, 112, 0.2);
+      color: #cbd5e1;
+    }
+
+    /* Right Column Tabs */
+    .tabs-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 6px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--fg-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #c4b5fd;
+      font-weight: 600;
+    }
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* Vis.js Graph Canvas */
+    .graph-viewport {
+      position: relative;
+      height: 480px;
+      background: #080c14;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #net {
+      width: 100%;
+      height: 100%;
+    }
+    .graph-toolbar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 4px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+    }
+    .graph-tool-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(56, 75, 112, 0.4);
+      color: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    /* Graph Legend */
+    .graph-legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend-color {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Selected Node Inspector Drawer */
+    #node-inspector {
+      display: none;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .inspector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .inspector-title {
+      font-weight: 600;
+      color: #fff;
+    }
+    .inspector-props {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    /* Memory Tab */
+    .mem-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .mem-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .mem-card h4 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fg-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fact-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 8px;
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: 4px;
+      margin-bottom: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+    .fact-pill {
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .fact-pill.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .fact-pill.superseded {
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.4);
+    }
+    .episode-item {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(56, 75, 112, 0.2);
+      font-size: 11.5px;
+      color: #cbd5e1;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--accent);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #fff;
+      display: none;
+      z-index: 100;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>HIND<span>SIGHT</span> <span class="badge-falkor">FalkorDB Native</span></h1>
+        <div class="brand-sub">Autonomous Graph-Native On-Call Copilot & Incident Commander</div>
+      </div>
+    </div>
+
+    <div class="telemetry-bar">
+      <div class="status-pill">
+        <span class="status-dot pulse"></span>
+        <span>FalkorDB :6379</span>
+      </div>
+      <div class="status-pill" id="graph-stat-pill">
+        <span id="edge-count-badge">100 Graph Edges</span>
+      </div>
+
+      <div class="control-group">
+        <div class="select-wrap">
+          <label for="tenant">Tenant</label>
+          <select id="tenant">
+            <option value="acme">Acme Corp</option>
+            <option value="globex">Globex Intl</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <label for="user">Engineer</label>
+          <select id="user">
+            <option value="asha">Asha (Platform)</option>
+            <option value="ben">Ben (Platform)</option>
+          </select>
+        </div>
+        <button class="btn-amber" onclick="seed()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Reseed Graph
+        </button>
+        <a href="http://localhost:3001" target="_blank" style="text-decoration: none;">
+          <button title="Open FalkorDB Visual Browser on port 3001">
+            Browser :3001 ↗
+          </button>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Subheader Scenario Presets -->
+  <div class="scenario-banner">
+    <div class="scenario-label">
+      <span>⚡ Quick Scenarios:</span>
+    </div>
+    <div class="scenario-chips">
+      <div class="chip" onclick="go('What broke recently around postgres-main and who should I page?')">
+        🚨 <span>Postgres Outage Suspects</span>
+      </div>
+      <div class="chip" onclick="go('What breaks if redis-cache goes down?')">
+        💥 <span>Redis Blast Radius</span>
+      </div>
+      <div class="chip" onclick="go('What are the most critical services?')">
+        📊 <span>PageRank Vulnerability</span>
+      </div>
+      <div class="chip" onclick="go('Tell me about kafka-bus decisions')">
+        📜 <span>Kafka Architecture Decisions</span>
+      </div>
+      <div class="chip" onclick="go('remember payments-svc oncall is Chen')">
+        🧠 <span>Teach Agent Memory</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid Workspace -->
+  <main>
+    <!-- Left Column: Copilot Console & Incident Commander -->
+    <div class="column">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Incident Copilot & Multi-Agent Swarm
+          </div>
+          <span style="font-size: 11px; color: var(--fg-dim);">Multi-Hop Cypher Reasoning</span>
+        </div>
+
+        <div class="query-box">
+          <div class="input-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+            <input id="q" placeholder="Ask Copilot: 'What broke recently around postgres-main and who should I page?'" onkeydown="if(event.key==='Enter')go()">
+          </div>
+          <div class="action-row">
+            <button class="btn-primary" onclick="go()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Investigate Query
+            </button>
+            <button class="btn-amber" onclick="inc()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Run Autonomous Swarm (Triage ➔ Investigator ➔ Scribe)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div id="mode-tag-slot"></div>
+          <div id="ans" class="answer-container">
+            <div style="color: var(--fg-dim); text-align: center; padding: 30px 0;">
+              Enter an investigation query or click a quick scenario above.<br>
+              Every decision and root-cause hypothesis is verified across the FalkorDB knowledge graph.
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card-header" style="margin-bottom: 8px;">
+            <div class="card-title" style="font-size: 12.5px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              FalkorDB Cypher Audit Trail
+            </div>
+            <span id="trace-count-badge" style="font-size: 11px; color: var(--fg-dim);">0 queries executed</span>
+          </div>
+          <div id="trace" class="trace-container">
+            <div style="color: var(--fg-dim); font-size: 11.5px; padding: 8px;">No active Cypher query execution trace yet.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Interactive Multi-Graph Observatory -->
+    <div class="column">
+      <div class="card">
+        <div class="tabs-header">
+          <button class="tab-btn active" onclick="switchTab('graph')">🗺️ Knowledge Graph (FalkorDB)</button>
+          <button class="tab-btn" onclick="switchTab('memory')">🧠 Agent Memory Graph</button>
+          <button class="tab-btn" onclick="switchTab('handoffs')">🔄 Swarm Handoffs</button>
+        </div>
+
+        <!-- Tab 1: Knowledge Graph -->
+        <div id="tab-graph" class="tab-pane active">
+          <div class="graph-legend">
+            <div class="legend-item"><span class="legend-color" style="background:#4da3ff"></span> Service</div>
+            <div class="legend-item"><span class="legend-color" style="background:#f2cc60"></span> Deploy</div>
+            <div class="legend-item"><span class="legend-color" style="background:#ff7b72"></span> Incident</div>
+            <div class="legend-item"><span class="legend-color" style="background:#7ee787"></span> Person</div>
+            <div class="legend-item"><span class="legend-color" style="background:#d2a8ff"></span> Team</div>
+            <div class="legend-item"><span class="legend-color" style="background:#79c0ff"></span> Decision</div>
+            <div class="legend-item"><span class="legend-color" style="background:#8b98a8"></span> Document</div>
+            <div class="legend-item"><span class="legend-color" style="background:#ffa657"></span> Runbook</div>
+          </div>
+
+          <div class="graph-viewport">
+            <div class="graph-toolbar">
+              <button class="graph-tool-btn" onclick="fitGraph()" title="Fit View">⛶ Fit</button>
+              <button class="graph-tool-btn" onclick="togglePhysics()" id="phys-btn" title="Toggle Physics">⚡ Physics</button>
+            </div>
+            <div id="net"></div>
+          </div>
+
+          <!-- Selected Node Inspector Drawer -->
+          <div id="node-inspector">
+            <div class="inspector-header">
+              <span class="inspector-title" id="insp-name">Node Inspector</span>
+              <span id="insp-label" class="badge-falkor">Service</span>
+            </div>
+            <div id="insp-props" class="inspector-props"></div>
+            <div id="insp-edges" style="margin-top: 8px; border-top: 1px solid var(--card-border); padding-top: 6px; font-size: 11px;"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Agent Memory Graph -->
+        <div id="tab-memory" class="tab-pane">
+          <div class="mem-grid">
+            <div class="mem-card">
+              <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Durable Semantic Facts (Isolated Per User)
+              </h4>
+              <div id="mem-facts">Loading memory facts...</div>
+            </div>
+
+            <div class="mem-card">
+              <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                Episodic Conversation Log (Context Continuity)
+              </h4>
+              <div id="mem-episodes">Loading past episodes...</div>
+            </div>
+
+            <div class="mem-card">
+              <h4>Teach Agent New Fact</h4>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <input id="mem-subj" placeholder="Entity (e.g. redis-cache)" style="flex:1; min-width: 110px;">
+                <input id="mem-attr" placeholder="Attribute (e.g. primary_oncall)" style="flex:1; min-width: 120px;">
+                <input id="mem-val" placeholder="Value (e.g. Ben)" style="flex:1; min-width: 100px;">
+                <button class="btn-primary" onclick="teachMemoryDirect()">Commit Fact</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Swarm Handoffs -->
+        <div id="tab-handoffs" class="tab-pane">
+          <div class="mem-card">
+            <h4>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+              Shared Multi-Agent Coordination Graph (`shared_<tenant>`)
+            </h4>
+            <div id="shared-handoffs-list" style="display: flex; flex-direction: column; gap: 8px;">
+              Loading coordination handoffs...
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const T = () => $('tenant').value;
+    const U = () => $('user').value;
+
+    const COL = {
+      Service: '#4da3ff',
+      Person: '#7ee787',
+      Team: '#d2a8ff',
+      Deploy: '#f2cc60',
+      Incident: '#ff7b72',
+      Decision: '#79c0ff',
+      Document: '#8b98a8',
+      Runbook: '#ffa657'
+    };
+
+    let nodes, edges, net, physicsEnabled = true;
+
+    function toast(msg) {
+      const el = $('toast');
+      el.innerHTML = `<span>✓</span> <span>${msg}</span>`;
+      el.style.display = 'flex';
+      setTimeout(() => { el.style.display = 'none'; }, 3200);
+    }
+
+    const post = (u, b) => fetch(u, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(b)
+    }).then(r => r.json());
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      $('tab-' + name).classList.add('active');
+      if (name === 'graph' && net) {
+        setTimeout(() => net.fit(), 100);
+      }
+      if (name === 'handoffs') {
+        loadHandoffs();
+      }
+    }
+
+    // Markdown-like formatter for clean dashboard display
+    function formatMarkdown(text) {
+      if (!text) return '';
+      let html = text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/\*\*(.*?)\*\*/gim, '<b>$1</b>')
+        .replace(/\*(.*?)\*/gim, '<i>$1</i>')
+        .replace(/`([^`]+)`/gim, '<code>$1</code>')
+        .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+        .replace(/\n\n/g, '<br><br>');
+
+      // Tables
+      if (html.includes('|')) {
+        const lines = html.split('<br>');
+        let inTable = false, tableHtml = '<table>';
+        const finalLines = [];
+        for (let l of lines) {
+          if (l.trim().startsWith('|') && l.trim().endsWith('|')) {
+            if (l.includes('---')) continue;
+            const cells = l.split('|').filter(c => c.trim().length > 0);
+            if (!inTable) {
+              inTable = true;
+              tableHtml += '<thead><tr>' + cells.map(c => `<th>${c.trim()}</th>`).join('') + '</tr></thead><tbody>';
+            } else {
+              tableHtml += '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
+            }
+          } else {
+            if (inTable) {
+              tableHtml += '</tbody></table>';
+              finalLines.push(tableHtml);
+              inTable = false;
+              tableHtml = '<table>';
+            }
+            finalLines.push(l);
+          }
+        }
+        if (inTable) {
+          tableHtml += '</tbody></table>';
+          finalLines.push(tableHtml);
+        }
+        html = finalLines.join('<br>');
+      }
+      return html;
+    }
+
+    async function seed() {
+      toast(`Seeding FalkorDB graph for tenant '${T()}'...`);
+      await post('/api/seed', { tenant: T() });
+      toast(`Graph seeded with synthetic topology & historical incidents.`);
+      await draw();
+      loadMemory();
+      loadHandoffs();
+    }
+
+    async function draw() {
+      const rows = await fetch('/api/graph?tenant=' + T()).then(r => r.json()).catch(() => []);
+      $('edge-count-badge').textContent = `${rows.length} Graph Edges Active`;
+      
+      const n = {}, e = [];
+      rows.forEach(r => {
+        n[r.a] = r.al;
+        n[r.b] = r.bl;
+        e.push({
+          from: r.a,
+          to: r.b,
+          label: r.rel,
+          arrows: 'to',
+          font: { size: 9, color: '#94a3b8', face: 'JetBrains Mono', strokeWidth: 0 },
+          color: { color: 'rgba(71, 85, 105, 0.45)', highlight: '#8b5cf6' }
+        });
+      });
+
+      nodes = new vis.DataSet(Object.entries(n).map(([id, label]) => ({
+        id,
+        label: id,
+        color: {
+          background: COL[label] || '#94a3b8',
+          border: 'rgba(255,255,255,0.2)',
+          highlight: { background: COL[label] || '#fff', border: '#ff7a45' }
+        },
+        font: { color: '#f1f5f9', size: 11, face: 'Inter' },
+        shape: label === 'Service' ? 'box' : 'dot',
+        size: label === 'Service' ? 14 : 9,
+        borderWidth: 1,
+        margin: 6
+      })));
+
+      edges = new vis.DataSet(e);
+
+      const container = $('net');
+      const data = { nodes, edges };
+      const options = {
+        physics: {
+          enabled: true,
+          solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            gravitationalConstant: -35,
+            centralGravity: 0.008,
+            springLength: 85,
+            springConstant: 0.18
+          },
+          stabilization: { iterations: 120 }
+        },
+        interaction: { hover: true, tooltipDelay: 200 }
+      };
+
+      net = new vis.Network(container, data, options);
+
+      net.on('click', async function (params) {
+        if (params.nodes.length > 0) {
+          inspectNode(params.nodes[0]);
+        } else {
+          $('node-inspector').style.display = 'none';
+        }
+      });
+    }
+
+    function togglePhysics() {
+      physicsEnabled = !physicsEnabled;
+      net.setOptions({ physics: { enabled: physicsEnabled } });
+      $('phys-btn').textContent = physicsEnabled ? '⚡ Physics On' : '⏸ Physics Off';
+    }
+
+    function fitGraph() {
+      if (net) net.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    }
+
+    async function inspectNode(name) {
+      const res = await fetch(`/api/node?name=${encodeURIComponent(name)}&tenant=${T()}`).then(r => r.json()).catch(() => null);
+      if (!res || !res.node) return;
+      
+      const insp = $('node-inspector');
+      insp.style.display = 'block';
+      $('insp-name').textContent = name;
+      $('insp-label').textContent = res.node.label;
+      $('insp-label').style.background = COL[res.node.label] ? `${COL[res.node.label]}33` : 'rgba(139,92,246,0.2)';
+      $('insp-label').style.borderColor = COL[res.node.label] || '#8b5cf6';
+      $('insp-label').style.color = COL[res.node.label] || '#fff';
+
+      const propsDiv = $('insp-props');
+      propsDiv.innerHTML = '';
+      for (const [k, v] of Object.entries(res.node.props || {})) {
+        if (k === 'name') continue;
+        propsDiv.innerHTML += `<span style="color:var(--fg-dim)">${k}:</span><span style="color:#fcd34d">${v}</span>`;
+      }
+
+      const edgesDiv = $('insp-edges');
+      if (res.edges && res.edges.length > 0) {
+        edgesDiv.innerHTML = `<span style="color:var(--fg-dim)">Connected to (${res.edges.length}):</span><br>` +
+          res.edges.slice(0, 6).map(e => `${e.outgoing ? '➔' : '⬅'} <code>${e.rel}</code> <b>${e.target}</b>`).join('<br>');
+      } else {
+        edgesDiv.innerHTML = `<span style="color:var(--fg-dim)">No direct relationships</span>`;
+      }
+    }
+
+    function highlightTouchedNodes(set) {
+      if (!nodes) return;
+      nodes.update(nodes.get().map(n => ({
+        id: n.id,
+        borderWidth: set.has(n.id) ? 3 : 1,
+        color: set.has(n.id) ? {
+          background: n.color.background || n.color,
+          border: '#ff7a45'
+        } : n.color
+      })));
+    }
+
+    function renderTrace(trace) {
+      const s = new Set();
+      $('trace').innerHTML = '';
+      $('trace-count-badge').textContent = `${trace.length} FalkorDB Queries Executed`;
+
+      if (trace.length === 0) {
+        $('trace').innerHTML = '<div style="color: var(--fg-dim); font-size: 11.5px; padding: 8px;">No Cypher queries generated for this step.</div>';
+        return;
+      }
+
+      trace.forEach((t, idx) => {
+        (t.touched || []).forEach(x => s.add(x));
+        const d = document.createElement('details');
+        d.className = 'trace-item';
+        if (idx === 0) d.open = true;
+
+        const rowCount = t.rows ? t.rows.length : 0;
+        const argsStr = Object.keys(t.args || {}).length ? JSON.stringify(t.args) : 'no args';
+
+        let tableHtml = '';
+        if (t.rows && t.rows.length > 0) {
+          const keys = Object.keys(t.rows[0]);
+          tableHtml = `<div class="rows-table-wrap"><table class="rows-table"><thead><tr>` +
+            keys.map(k => `<th>${k}</th>`).join('') + `</tr></thead><tbody>` +
+            t.rows.map(r => `<tr>` + keys.map(k => `<td>${typeof r[k] === 'object' ? JSON.stringify(r[k]) : r[k]}</td>`).join('') + `</tr>`).join('') +
+            `</tbody></table></div>`;
+        } else {
+          tableHtml = `<div style="font-size:11px; color:var(--fg-dim);">Returned 0 rows</div>`;
+        }
+
+        d.innerHTML = `
+          <summary class="trace-summary">
+            <span class="tool-name">⚡ ${t.tool}</span>
+            <span class="tool-meta">${argsStr} → ${rowCount} rows</span>
+          </summary>
+          <div class="trace-content">
+            <div class="cypher-box">${t.cypher}</div>
+            ${tableHtml}
+          </div>
+        `;
+        $('trace').append(d);
+      });
+      highlightTouchedNodes(s);
+    }
+
+    async function go(q) {
+      if (q) $('q').value = q;
+      const question = $('q').value.trim();
+      if (!question) return;
+
+      $('ans').innerHTML = '<div style="color:var(--accent); padding:20px; text-align:center;">Walking FalkorDB Graph & Reasoning...</div>';
+      $('mode-tag-slot').innerHTML = '';
+
+      try {
+        const r = await post('/api/ask', { question, tenant: T(), user: U() });
+        $('mode-tag-slot').innerHTML = `<span class="mode-tag">⚡ ${r.mode}</span>`;
+        $('ans').innerHTML = formatMarkdown(r.answer);
+        renderTrace(r.trace);
+        loadMemory();
+      } catch (err) {
+        $('ans').innerHTML = `<div style="color:var(--brand-red)">Error: ${err.message}</div>`;
+      }
+    }
+
+    async function inc() {
+      const svc = $('q').value.trim() || 'postgres-main';
+      $('ans').innerHTML = '<div style="color:var(--brand-amber); padding:20px; text-align:center;">Autonomous Incident Swarm active: Triage ➔ Investigator ➔ Scribe...</div>';
+      $('mode-tag-slot').innerHTML = `<span class="mode-tag swarm">🔄 Autonomous Multi-Agent Swarm</span>`;
+
+      try {
+        const r = await post('/api/incident', { service: svc, tenant: T(), user: U() });
+        let allTrace = [];
+        let stagesHtml = `<div class="agent-pipeline">`;
+
+        r.stages.forEach(s => {
+          const cls = s.agent.toLowerCase();
+          stagesHtml += `
+            <div class="agent-stage-card ${cls}">
+              <div class="agent-stage-header">
+                <span class="agent-name-badge">
+                  <span>🤖 ${s.agent} Agent</span>
+                  <span class="handoff-arrow">➔ ${s.handoff_to}</span>
+                </span>
+                <span class="badge-falkor" style="font-size:9.5px">Handoff Stored</span>
+              </div>
+              <div>${formatMarkdown(s.summary)}</div>
+            </div>
+          `;
+          allTrace = allTrace.concat(s.trace || []);
+        });
+
+        stagesHtml += `
+          <div style="font-size: 11px; color: var(--fg-dim); margin-top: 6px;">
+            📌 Incident Case: <code>${r.case}</code> permanently recorded in FalkorDB shared graph <code>shared_${T()}</code>.
+          </div>
+        </div>`;
+
+        $('ans').innerHTML = stagesHtml;
+        renderTrace(allTrace);
+        loadMemory();
+        loadHandoffs();
+      } catch (err) {
+        $('ans').innerHTML = `<div style="color:var(--brand-red)">Error running swarm: ${err.message}</div>`;
+      }
+    }
+
+    async function loadMemory() {
+      try {
+        const m = await fetch(`/api/memory?tenant=${T()}&user=${U()}`).then(r => r.json());
+        const factsDiv = $('mem-facts');
+        if (m.facts && m.facts.length > 0) {
+          factsDiv.innerHTML = m.facts.map(f => `
+            <div class="fact-item">
+              <div><b>${f.entity}</b>.${f.attribute} = <span style="color:#fcd34d">${f.value}</span></div>
+              <span class="fact-pill ${f.current ? 'active' : 'superseded'}">${f.current ? 'Active' : 'Superseded'}</span>
+            </div>
+          `).join('');
+        } else {
+          factsDiv.innerHTML = '<div style="color:var(--fg-dim); font-size:11px;">No facts stored yet.</div>';
+        }
+
+        const epDiv = $('mem-episodes');
+        if (m.episodes && m.episodes.length > 0) {
+          epDiv.innerHTML = m.episodes.map(e => `
+            <div class="episode-item">
+              <span style="color:var(--accent);">Q:</span> ${e.question}
+            </div>
+          `).join('');
+        } else {
+          epDiv.innerHTML = '<div style="color:var(--fg-dim); font-size:11px;">No interaction episodes recorded.</div>';
+        }
+      } catch (err) {}
+    }
+
+    async function teachMemoryDirect() {
+      const s = $('mem-subj').value.trim();
+      const a = $('mem-attr').value.trim();
+      const v = $('mem-val').value.trim();
+      if (!s || !a || !v) return;
+      await go(`remember ${s} ${a} is ${v}`);
+      $('mem-subj').value = ''; $('mem-attr').value = ''; $('mem-val').value = '';
+      switchTab('memory');
+    }
+
+    async function loadHandoffs() {
+      try {
+        const hs = await fetch(`/api/handoffs?tenant=${T()}`).then(r => r.json());
+        const el = $('shared-handoffs-list');
+        if (hs && hs.length > 0) {
+          el.innerHTML = hs.map(h => `
+            <div class="agent-stage-card" style="font-size: 11.5px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <b>Case: <code>${h.case}</code></b>
+                <span style="color:var(--fg-dim)">${new Date(h.ts).toLocaleTimeString()}</span>
+              </div>
+              <div style="color:var(--accent); font-weight:600; margin-bottom:2px;">
+                ${h.frm} ➔ ${h.to}
+              </div>
+              <div style="color:var(--fg);">${formatMarkdown(h.summary)}</div>
+            </div>
+          `).join('');
+        } else {
+          el.innerHTML = '<div style="color:var(--fg-dim); font-size:11.5px;">No multi-agent handoffs recorded yet in shared graph.</div>';
+        }
+      } catch (err) {}
+    }
+
+    $('tenant').onchange = $('user').onchange = () => {
+      draw();
+      loadMemory();
+      loadHandoffs();
+    };
+
+    // Auto-seed and initialize on load
+    seed();
+  </script>
+</body>
+</html>

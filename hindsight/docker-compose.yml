@@ -1,0 +1,15 @@
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    ports: ["6379:6379", "3001:3000"]   # 3001 = FalkorDB Browser
+    volumes: ["falkor-data:/var/lib/falkordb/data"]
+  app:
+    build: .
+    ports: ["8000:8000"]
+    volumes:
+      - .:/srv
+    environment:
+      FALKORDB_HOST: falkordb
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on: [falkordb]
+volumes: {falkor-data: {}}
