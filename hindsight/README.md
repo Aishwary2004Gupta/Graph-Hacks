@@ -32,13 +32,10 @@ Traditional RAG and vector databases hallucinate, fail at multi-hop graph traver
 
 ### Option A: Docker Compose (Recommended)
 ```bash
-# 1. (Optional) Provide Claude API key for LLM mode. If omitted, Hindsight runs with its built-in FalkorDB Graph-Inference Engine.
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# 2. Start FalkorDB (:6379), FalkorDB Visual Browser (:3001), and Hindsight App (:8000)
+# 1. Start FalkorDB (:6379), FalkorDB Visual Browser (:3001), and Hindsight App (:8000)
 docker compose up --build
 
-# 3. Open the Mission Control Dashboard
+# 2. Open the Mission Control Dashboard
 open http://localhost:8000
 ```
 
